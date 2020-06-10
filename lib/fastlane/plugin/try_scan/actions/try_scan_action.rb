@@ -1,6 +1,7 @@
 module Fastlane
   module Actions
 
+    require 'json'
     require 'fastlane/actions/scan'
     require_relative '../helper/scan_helper'
     require_relative '../helper/try_scan_runner'
@@ -89,7 +90,7 @@ module Fastlane
             description: "The number of times to retry running tests via scan",
             type: Integer,
             is_string: false,
-            default_value: 1
+            default_value: 0
           )
         ]
       end
