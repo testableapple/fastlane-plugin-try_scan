@@ -10,18 +10,26 @@ module TryScanManager
     def run
       update_scan_config
       print_summary
-      attempt = 1
+      @attempt = 1
       begin
-        warn_of_performing_attempts(attempt)
+        warn_of_performing_attempts
         clear_preexisting_data
         Scan::Runner.new.run
+        print_parallel_scan_result
         return true
-      rescue FastlaneCore::Interface::FastlaneBuildFailure, FastlaneCore::Interface::FastlaneTestFailure => _
-        update_scan_reports(attempt)
-        return false if attempt > @options[:try_count]
+      rescue FastlaneCore::Interface::FastlaneTestFailure => _
+        failed_tests = extract_failed_tests
+        print_parallel_scan_result(failed_tests_count: failed_tests.size)
+        update_scan_junit_report
+        return false if @attempt >= @options[:try_count]
 
-        attempt += 1
-        update_scan_options
+        @attempt += 1
+        update_scan_options(failed_tests)
+        retry
+      rescue FastlaneCore::Interface::FastlaneBuildFailure => _
+        return false if @attempt >= @options[:try_count]
+
+        @attempt += 1
         retry
       end
     end
@@ -32,7 +40,7 @@ module TryScanManager
         output_types << 'junit'
         Scan.config[:output_types] = output_types.join(',')
       end
-      @options[:try_count] = 0 if @options[:try_count] < 0
+      @options[:try_count] = 1 if @options[:try_count] < 1
     end
 
     def print_summary
@@ -51,8 +59,8 @@ module TryScanManager
       )
     end
 
-    def warn_of_performing_attempts(attempt)
-      FastlaneCore::UI.important("TryScan shot №#{attempt}\n")
+    def warn_of_performing_attempts
+      FastlaneCore::UI.important("TryScan: Getting started #{ordinalized_attempt} shot\n")
     end
 
     def clear_preexisting_data
@@ -62,15 +70,34 @@ module TryScanManager
       FastlaneScanHelper.remove_report_files
     end
 
-    def update_scan_reports(attempt)
-      merge_junit_reports if attempt != 1 && !parallel_running?
+    def print_parallel_scan_result(failed_tests_count: 0)
+      return unless parallel_running?
+
+      FastlaneCore::UI.important("TryScan: result after #{ordinalized_attempt} shot 👇")
+      FastlaneCore::PrintTable.print_values(
+        config: {"Number of tests" => tests_count_from_xcresult_report, "Number of failures" => failed_tests_count},
+        title: "Test Results"
+      )
     end
 
-    def update_scan_options
+    def ordinalized_attempt
+      case @attempt
+      when 1
+        "#{@attempt}st"
+      when 2
+        "#{@attempt}nd"
+      when 3
+        "#{@attempt}rd"
+      else
+        "#{@attempt}th"
+      end
+    end
+
+    def update_scan_options(failed_tests)
       scan_options = @options.select { |key,  _|
         FastlaneScanHelper.valid_scan_keys.include?(key)
       }.merge(plugin_scan_options)
-      scan_options[:only_testing] = extract_failed_tests
+      scan_options[:only_testing] = failed_tests
       scan_options[:skip_build] = true
       scan_options[:test_without_building] = true
       scan_options[:build_for_testing] = false
@@ -99,9 +126,9 @@ module TryScanManager
 
     def extract_failed_tests
       if parallel_running?
-        extract_failed_tests_from_xcresult_report
+        failed_tests_from_xcresult_report
       else
-        extract_failed_tests_from_junit_report
+        failed_tests_from_junit_report
       end
     end
 
@@ -111,7 +138,7 @@ module TryScanManager
             (@options[:xcargs] && (@options[:xcargs] =~ /-parallel-testing-enabled(=|\s+)YES/ || @options[:xcargs].split('-destination').size > 2))
     end
 
-    def extract_failed_tests_from_junit_report
+    def failed_tests_from_junit_report
       report = junit_report
       suite_name = report.xpath('testsuites/@name').to_s.split('.')[0]
       test_cases = report.xpath('//testcase')
@@ -123,7 +150,6 @@ module TryScanManager
         test_name = test_case.xpath('@name')
         only_testing << "#{suite_name}/#{test_class}/#{test_name}"
       end
-      FastlaneCore::UI.verbose("Extracted tests to retry: #{only_testing}")
       only_testing
     end
 
@@ -139,7 +165,9 @@ module TryScanManager
       @cached_junit_report
     end
 
-    def merge_junit_reports
+    def update_scan_junit_report
+      return if @attempt == 1 || parallel_running?
+
       old_junit_report = junit_report(cached: true)
       new_junit_report = junit_report(cached: false)
 
@@ -169,7 +197,7 @@ module TryScanManager
       JSON.parse(`xcrun xcresulttool get --format json --path #{xcresult_report_files.first}`)
     end
 
-    def extract_failed_tests_from_xcresult_report
+    def failed_tests_from_xcresult_report
       only_testing = []
       parse_xcresult_report['issues']['testFailureSummaries']['_values'].each do |failed_test|
         suite_name = failed_test['producingTarget']['_value']
@@ -177,8 +205,11 @@ module TryScanManager
         test_name = failed_test['testCaseName']['_value'].split('.')[1].split('(').first
         only_testing << "#{suite_name}/#{test_class}/#{test_name}"
       end
-      FastlaneCore::UI.verbose("Extracted tests to retry: #{only_testing}")
       only_testing
+    end
+
+    def tests_count_from_xcresult_report
+      parse_xcresult_report['metrics']['testsCount']['_value']
     end
   end
 end

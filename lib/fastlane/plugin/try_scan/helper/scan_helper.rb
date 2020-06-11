@@ -88,18 +88,6 @@ module TryScanManager
           end
         end
       end
-
-      def self.update_xctestrun_after_build(scan_options)
-        xctestrun_files = Dir.glob("#{Scan.config[:derived_data_path]}/Build/Products/*.xctestrun")
-        FastlaneCore::UI.verbose("After building, found xctestrun files #{xctestrun_files} (choosing 1st)")
-        scan_options[:xctestrun] = xctestrun_files.first
-      end
-
-      def self.remove_preexisting_xctestrun_files
-        xctestrun_files = Dir.glob("#{Scan.config[:derived_data_path]}/Build/Products/*.xctestrun")
-        FastlaneCore::UI.verbose("Before building, removing pre-existing xctestrun files: #{xctestrun_files}")
-        FileUtils.rm_rf(xctestrun_files)
-      end
     end
   end
 end
