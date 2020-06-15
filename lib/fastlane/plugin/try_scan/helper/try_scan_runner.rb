@@ -201,8 +201,14 @@ module TryScanManager
       only_testing = []
       parse_xcresult_report['issues']['testFailureSummaries']['_values'].each do |failed_test|
         suite_name = failed_test['producingTarget']['_value']
-        test_class = failed_test['testCaseName']['_value'].split('.').first
-        test_name = failed_test['testCaseName']['_value'].split('.')[1].split('(').first
+        test_path = failed_test['testCaseName']['_value']
+        begin
+          test_class = test_path.split('.').first
+          test_name = test_path.split('.')[1].split('(').first
+        rescue NoMethodError => _
+          test_class = test_path.split('[')[1].split(' ').first
+          test_name = test_path.split(' ')[1].split(']').first
+        end
         only_testing << "#{suite_name}/#{test_class}/#{test_name}"
       end
       only_testing
