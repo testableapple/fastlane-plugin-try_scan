@@ -1,129 +1,24 @@
 lane :test do
-
-  ################
-  # Common Tests #
-  ################
-
-  puts "1. :try_scan result_bundle test"
   try_scan(
-    try_count: 10,
-    scheme: 'sample-appTests',
-    result_bundle: false
-  )
-
-  puts "2. :try_scan build_for_testing test"
-  try_scan(
-    scheme: 'sample-appSuccessfulTests',
-    build_for_testing: true,
-    xcargs: 'build-for-testing'
-  )
-
-  ##############
-  # Unit Tests #
-  ##############
-
-  puts "1. :try_scan quite unit test"
-  try_scan(
-    try_count: 10,
-    scheme: 'sample-appTests',
-    xcargs: '-quiet'
-  )
-
-  puts "2. :try_scan quite parallel unit test"
-  try_scan(
-    try_count: 10,
-    scheme: 'sample-appParallelTests',
-    xcargs: '-quiet'
-  )
-
-  puts "3. :try_scan unit test with failures"
-  try_scan(
-    try_count: 10,
-    scheme: 'sample-appTests'
-  )
-
-  puts "4. :try_scan successful unit test"
-  try_scan(
+    try_count: 2,
     scheme: 'sample-appSuccessfulTests'
   )
 
-  puts "5. :try_scan unit test with multiple devices"
-  try_scan(
-    try_count: 10,
-    scheme: 'sample-appTests',
-    devices: ['iPhone 11 Pro Max', 'iPhone 11']
-  )
-
-  puts "6. :try_scan parallel unit test"
   try_scan(
     try_count: 10,
     scheme: 'sample-appParallelTests'
   )
 
-  puts "7. :try_scan parallel unit test with multiple devices"
-  try_scan(
-    try_count: 10,
-    scheme: 'sample-appParallelTests',
-    devices: ['iPhone 11 Pro Max', 'iPhone 11']
-  )
-
-  puts "8. :try_scan parallel unit test with concurrent workers"
-  try_scan(
-    try_count: 10,
-    scheme: 'sample-appParallelTests',
-    concurrent_workers: 2
-  )
-
-  puts "9. :try_scan parallel unit test with :disable_concurrent_testing option"
-  try_scan(
-    try_count: 10,
-    scheme: 'sample-appParallelTests',
-    disable_concurrent_testing: true
-  )
-
-  puts "10. :try_scan parallel unit test with concurrent workers via xcargs"
-  try_scan(
-    try_count: 10,
-    scheme: 'sample-appParallelTests',
-    xcargs: "-parallel-testing-enabled YES -parallel-testing-worker-count 2"
-  )
-
-  puts "11. :try_scan parallel unit test with :disable_concurrent_testing option via xcargs"
-  try_scan(
-    try_count: 10,
-    scheme: 'sample-appParallelTests',
-    xcargs: "-parallel-testing-enabled NO"
-  )
-
-  puts "12. :try_scan parallel unit test with :destination option"
-  try_scan(
-    try_count: 10,
-    scheme: 'sample-appParallelTests',
-    destination: "platform=iOS Simulator,name=iPhone 11 Pro Max",
-    device: nil
-  )
-
-  ############
-  # UI Tests #
-  ############
-
-  puts "1. :try_scan UI test with failures"
-  try_scan(
-    try_count: 10,
-    scheme: 'sample-appUITests'
-  )
-
-  puts "2. :try_scan ui test with multiple devices"
-  try_scan(
-    try_count: 10,
-    scheme: 'sample-appUITests',
-    devices: ['iPhone 11 Pro Max', 'iPhone 11']
-  )
-
-  puts "3. :try_scan parallel ui test"
   try_scan(
     try_count: 10,
     scheme: 'sample-appParallelUITests'
   )
 
+  try_scan(
+    try_count: 10,
+    scheme: 'sample-appParallelTests',
+    try_parallel: true,
+    retry_parallel: false,
+    parallel_workers: 2
+  )
 end

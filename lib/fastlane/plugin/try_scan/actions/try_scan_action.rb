@@ -11,27 +11,12 @@ module Fastlane
     class TryScanAction < Action
       def self.run(params)
         if Helper.xcode_at_least?('11.0.0')
-          prepare_scan_config(params.values)
-          prepare_destination(params)
+          params[:destination] = [params[:destination]] if params[:destination] && !params[:destination].kind_of?(Array)
           success = TryScanManager::Runner.new(params.values).run
 
           raise FastlaneCore::UI.test_failure!('Tests have failed') if params[:fail_build] && !success
         else
           raise FastlaneCore::UI.user_error!("Minimum supported Xcode: `v11.0.0` (used: `v#{Helper.xcode_version}`)")
-        end
-      end
-
-      def self.prepare_scan_config(scan_options)
-        Scan.config = FastlaneCore::Configuration.create(
-          Fastlane::Actions::ScanAction.available_options,
-          FastlaneScanHelper.scan_options_from_try_scan_options(scan_options)
-        )
-      end
-
-      def self.prepare_destination(params)
-        destination = params[:destination] || Scan.config[:destination] || []
-        unless destination.kind_of?(Array)
-          params[:destination] = Scan.config[:destination] = [destination]
         end
       end
 
@@ -52,10 +37,35 @@ module Fastlane
           FastlaneCore::ConfigItem.new(
             key: :try_count,
             env_name: "FL_TRY_SCAN_TRY_COUNT",
-            description: "The number of times to retry running tests via scan",
+            description: "Number of times to try to get your tests green",
             type: Integer,
             is_string: false,
+            optional: true,
             default_value: 1
+          ),
+          FastlaneCore::ConfigItem.new(
+            key: :try_parallel,
+            env_name: "FL_TRY_SCAN_TRY_PARALLEL",
+            description: "Should first run be executed in parallel? Equivalent to -parallel-testing-enabled",
+            is_string: false,
+            optional: true,
+            default_value: true
+          ),
+          FastlaneCore::ConfigItem.new(
+            key: :retry_parallel,
+            env_name: "FL_TRY_SCAN_RETRY_PARALLEL",
+            description: "Should subsequent runs be executed in parallel? Required :try_parallel: true",
+            is_string: false,
+            optional: true,
+            default_value: true
+          ),
+          FastlaneCore::ConfigItem.new(
+            key: :parallel_workers,
+            env_name: "FL_TRY_SCAN_PARALLEL_WORKERS",
+            description: "Specify the exact number of test runners that will be spawned during parallel testing. Equivalent to -parallel-testing-worker-count and :concurrent_workers",
+            type: Integer,
+            is_string: false,
+            optional: true
           )
         ]
       end
@@ -65,7 +75,7 @@ module Fastlane
       end
 
       def self.is_supported?(platform)
-        [:ios].include?(platform)
+        [:ios, :mac].include?(platform)
       end
     end
   end

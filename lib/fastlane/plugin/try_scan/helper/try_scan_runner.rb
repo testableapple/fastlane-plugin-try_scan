@@ -6,13 +6,15 @@ module TryScanManager
     def initialize(options = {})
       @options = options
       @options[:try_count] = 1 if @options[:try_count] < 1
+      @options[:result_bundle] = true
     end
 
     def run
+      configure_xcargs
+      prepare_scan_config(@options)
       print_summary
       @attempt = 1
       begin
-        essential_scan_config_updates
         warn_of_performing_attempts
         clear_preexisting_data
         Scan::Runner.new.run
@@ -86,12 +88,50 @@ module TryScanManager
       end
     end
 
+    def prepare_scan_config(scan_options)
+      Scan.config = FastlaneCore::Configuration.create(
+        Fastlane::Actions::ScanAction.available_options,
+        FastlaneScanHelper.scan_options_from_try_scan_options(scan_options)
+      )
+    end
+
+    def configure_xcargs
+      if @options[:xcargs]&.include?('-parallel-testing-enabled')
+        FastlaneCore::UI.important("TryScan overwrites `-parallel-testing-enabled` in :xcargs, use :try_parallel option instead")
+        @options[:xcargs].gsub!(/-parallel-testing-enabled(=|\s+)(YES|NO)/, '')
+      end
+
+      if @options[:xcargs]&.include?('-parallel-testing-worker-count')
+        FastlaneCore::UI.important("TryScan overwrites `-parallel-testing-worker-count` in :xcargs, use :concurrent_workers option instead")
+        @options[:xcargs].gsub!(/-parallel-testing-worker-count(=|\s+)(\d+)/, '')
+      end
+
+      if @options[:xcargs]&.include?('build-for-testing') || @options[:build_for_testing]
+        FastlaneCore::UI.important("TryScan rejects `build-for-testing` request, use it in a separate scan lane")
+        @options[:xcargs].slice!('build-for-testing')
+        @options[:build_for_testing] = nil
+      end
+
+      if @options[:try_parallel] && !@options[:disable_concurrent_testing]
+        xcargs = ['-parallel-testing-enabled YES']
+        if @options[:parallel_workers] || @options[:concurrent_workers]
+          workers_count = [@options[:parallel_workers].to_i, @options[:concurrent_workers].to_i].max
+          xcargs << "-parallel-testing-worker-count #{workers_count}"
+        end
+        @options[:xcargs] = "#{@options[:xcargs].to_s} #{xcargs.join(' ')}"
+      end
+    end
+
     def update_scan_options(failed_tests)
       scan_options = FastlaneScanHelper.scan_options_from_try_scan_options(@options)
       scan_options[:only_testing] = failed_tests
       scan_options[:skip_build] = true
-      scan_options[:test_without_building] = true
       scan_options.delete(:skip_testing)
+      if @options[:try_parallel] && !@options[:retry_parallel]
+        scan_options[:xcargs].gsub!(/-parallel-testing-enabled(=|\s+)(YES|NO)/, '-parallel-testing-enabled NO')
+        scan_options[:xcargs].gsub!(/-parallel-testing-worker-count(=|\s+)(\d+)/, '')
+      end
+
       Scan.cache.clear
       scan_options.each do |key, val|
         next if val.nil?
@@ -99,12 +139,6 @@ module TryScanManager
         Scan.config.set(key, val)
         FastlaneCore::UI.verbose("\tSetting #{key.to_s} to #{val}")
       end
-    end
-
-    def essential_scan_config_updates
-      Scan.config[:result_bundle] = true
-      Scan.config[:build_for_testing] = nil if Scan.config[:build_for_testing]
-      Scan.config[:xcargs].slice!('build-for-testing') if Scan.config[:xcargs]&.include?('build-for-testing')
     end
 
     def parse_xcresult_report
