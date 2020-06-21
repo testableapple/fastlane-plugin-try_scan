@@ -5,42 +5,37 @@ module TryScanManager
 
     def initialize(options = {})
       @options = options
+      @options[:try_count] = 1 if @options[:try_count] < 1
     end
 
     def run
-      update_scan_config
       print_summary
       @attempt = 1
       begin
+        essential_scan_config_updates
         warn_of_performing_attempts
         clear_preexisting_data
         Scan::Runner.new.run
-        print_parallel_scan_result
+        print_try_scan_result
         return true
       rescue FastlaneCore::Interface::FastlaneTestFailure => _
-        failed_tests = extract_failed_tests
-        print_parallel_scan_result(failed_tests_count: failed_tests.size)
-        update_scan_junit_report
-        return false if @attempt >= @options[:try_count]
+        failed_tests = failed_tests_from_xcresult_report
+        print_try_scan_result(failed_tests_count: failed_tests.size)
+        return false if finish?
 
         @attempt += 1
         update_scan_options(failed_tests)
         retry
       rescue FastlaneCore::Interface::FastlaneBuildFailure => _
-        return false if @attempt >= @options[:try_count]
+        return false if finish?
 
         @attempt += 1
         retry
       end
     end
 
-    def update_scan_config
-      if !Scan.config[:output_types].include?('junit') && !parallel_running?
-        output_types = Scan.config[:output_types].split(',')
-        output_types << 'junit'
-        Scan.config[:output_types] = output_types.join(',')
-      end
-      @options[:try_count] = 1 if @options[:try_count] < 1
+    def finish?
+      @attempt >= @options[:try_count]
     end
 
     def print_summary
@@ -70,9 +65,7 @@ module TryScanManager
       FastlaneScanHelper.remove_report_files
     end
 
-    def print_parallel_scan_result(failed_tests_count: 0)
-      return unless parallel_running?
-
+    def print_try_scan_result(failed_tests_count: 0)
       FastlaneCore::UI.important("TryScan: result after #{ordinalized_attempt} shot 👇")
       FastlaneCore::PrintTable.print_values(
         config: {"Number of tests" => tests_count_from_xcresult_report, "Number of failures" => failed_tests_count},
@@ -94,97 +87,24 @@ module TryScanManager
     end
 
     def update_scan_options(failed_tests)
-      scan_options = @options.select { |key,  _|
-        FastlaneScanHelper.valid_scan_keys.include?(key)
-      }.merge(plugin_scan_options)
+      scan_options = FastlaneScanHelper.scan_options_from_try_scan_options(@options)
       scan_options[:only_testing] = failed_tests
       scan_options[:skip_build] = true
       scan_options[:test_without_building] = true
-      scan_options[:build_for_testing] = false
       scan_options.delete(:skip_testing)
       Scan.cache.clear
       scan_options.each do |key, val|
         next if val.nil?
 
-        Scan.config.set(key, val) unless val.nil?
+        Scan.config.set(key, val)
         FastlaneCore::UI.verbose("\tSetting #{key.to_s} to #{val}")
       end
     end
 
-    def plugin_scan_options
-      xcargs = @options[:xcargs] || ''
-      if xcargs&.include?('build-for-testing')
-        FastlaneCore::UI.important(":xcargs, #{xcargs}, contained 'build-for-testing', removing it")
-        xcargs.slice!('build-for-testing')
-      end
-      if xcargs.include?('-quiet')
-        FastlaneCore::UI.important('Disabling -quiet as failing tests cannot be found with it enabled.')
-        xcargs.gsub!('-quiet', '')
-      end
-      @options.select { |key, _| FastlaneScanHelper.valid_scan_keys.include?(key) }.merge({ xcargs: xcargs })
-    end
-
-    def extract_failed_tests
-      if parallel_running?
-        failed_tests_from_xcresult_report
-      else
-        failed_tests_from_junit_report
-      end
-    end
-
-    def parallel_running?
-      return @options[:concurrent_workers].to_i > 0 ||
-            (@options[:devices] && @options[:devices].size > 1) ||
-            (@options[:xcargs] && (@options[:xcargs] =~ /-parallel-testing-enabled(=|\s+)YES/ || @options[:xcargs].split('-destination').size > 2))
-    end
-
-    def failed_tests_from_junit_report
-      report = junit_report
-      suite_name = report.xpath('testsuites/@name').to_s.split('.')[0]
-      test_cases = report.xpath('//testcase')
-      only_testing = []
-      test_cases.each do |test_case|
-        next if test_case.xpath('failure').empty?
-
-        test_class = test_case.xpath('@classname').to_s.split('.')[1]
-        test_name = test_case.xpath('@name')
-        only_testing << "#{suite_name}/#{test_class}/#{test_name}"
-      end
-      only_testing
-    end
-
-    def junit_report(cached: false)
-      unless cached
-        report_options = FastlaneScanHelper.report_options
-        output_files = report_options.instance_variable_get(:@output_files)
-        output_directory = report_options.instance_variable_get(:@output_directory)
-        file_name = output_files.select { |name| name.include?('.xml') }.first
-        @junit_report_path = "#{output_directory}/#{file_name}"
-        @cached_junit_report = File.open(@junit_report_path) { |f| Nokogiri::XML(f) }
-      end
-      @cached_junit_report
-    end
-
-    def update_scan_junit_report
-      return if @attempt == 1 || parallel_running?
-
-      old_junit_report = junit_report(cached: true)
-      new_junit_report = junit_report(cached: false)
-
-      new_junit_report.css("testsuites").zip(old_junit_report.css("testsuites")).each do |new_suites, old_suites|
-        old_suites.attributes["failures"].value = new_suites.attributes["failures"].value
-        new_suites.css("testsuite").zip(old_suites.css("testsuite")).each do |new_suite, old_suite|
-          old_suite.attributes["failures"].value = new_suite.attributes["failures"].value
-        end
-      end
-
-      new_junit_report.css('testcase').each do |node1|
-        old_junit_report.css('testcase').each do |node2|
-          node2.children = node1.children if node1['name'] == node2['name']
-        end
-      end
-
-      File.open(@junit_report_path, "w+") { |f| f.write(old_junit_report.to_xml) }
+    def essential_scan_config_updates
+      Scan.config[:result_bundle] = true
+      Scan.config[:build_for_testing] = nil if Scan.config[:build_for_testing]
+      Scan.config[:xcargs].slice!('build-for-testing') if Scan.config[:xcargs]&.include?('build-for-testing')
     end
 
     def parse_xcresult_report

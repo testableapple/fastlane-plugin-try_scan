@@ -19,29 +19,7 @@ module TryScanManager
       end
 
       def self.scan_options_from_try_scan_options(params)
-        valid_scan_keys = Fastlane::Actions::ScanAction.available_options.map(&:key)
         params.select { |key, _| valid_scan_keys.include?(key) }
-      end
-
-      def self.options_from_configuration_file(params)
-        config = FastlaneCore::Configuration.create(
-          Fastlane::Actions::ScanAction.available_options,
-          params
-        )
-        config_file = config.load_configuration_file(Scan.scanfile_name, nil, true)
-        overridden_options = config_file ? config_file.options : {}
-
-        FastlaneCore::Project.detect_projects(config)
-        project = FastlaneCore::Project.new(config)
-
-        imported_path = File.expand_path(Scan.scanfile_name)
-        Dir.chdir(File.expand_path("..", project.path)) do
-          if File.expand_path(Scan.scanfile_name) != imported_path
-            config_file = config.load_configuration_file(Scan.scanfile_name, nil, true)
-          end
-          overridden_options.merge!(config_file.options) if config_file
-        end
-        overridden_options
       end
 
       def self.remove_preexisting_simulator_logs(params)
