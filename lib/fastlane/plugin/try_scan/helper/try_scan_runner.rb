@@ -112,14 +112,18 @@ module TryScanManager
         @options[:build_for_testing] = nil
       end
 
-      if @options[:try_parallel] && !@options[:disable_concurrent_testing]
-        xcargs = ['-parallel-testing-enabled YES']
+      xcargs = []
+      if @options[:try_parallel]
+        xcargs << '-parallel-testing-enabled YES'
         if @options[:parallel_workers] || @options[:concurrent_workers]
           workers_count = [@options[:parallel_workers].to_i, @options[:concurrent_workers].to_i].max
           xcargs << "-parallel-testing-worker-count #{workers_count}"
+          @options[:concurrent_workers] = nil
         end
-        @options[:xcargs] = "#{@options[:xcargs].to_s} #{xcargs.join(' ')}"
+      else
+        xcargs << '-parallel-testing-enabled NO'
       end
+      @options[:xcargs] = "#{@options[:xcargs].to_s} #{xcargs.join(' ')}"
     end
 
     def update_scan_options(failed_tests)

@@ -21,4 +21,4 @@ test-results
 /TestResults/
 fastlane/test_output/
 info.plist
-/xcuserdata/
+*.xcuserdatad
