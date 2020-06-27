@@ -8,9 +8,9 @@ Gem::Specification.new do |spec|
   spec.name          = 'fastlane-plugin-try_scan'
   spec.version       = Fastlane::TryScan::VERSION
   spec.author        = 'Alexey Alter-Pesotskiy'
-  spec.email         = '33gri@bk.ru'
+  spec.email         = 'a.alterpesotskiy@mail.ru'
 
-  spec.summary       = 'Simple way to retry your scan action'
+  spec.summary       = 'The easiest way to retry your fastlane scan action'
   spec.homepage      = "https://github.com/alteral/fastlane-plugin-try_scan"
   spec.license       = "MIT"
 

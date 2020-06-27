@@ -66,6 +66,18 @@ module Fastlane
             type: Integer,
             is_string: false,
             optional: true
+          ),
+          FastlaneCore::ConfigItem.new(
+            key: :retry_strategy,
+            env_name: "FL_TRY_SCAN_RETRY_STRATEGY",
+            description: "What would you like to retry after failure: test, class or suite?",
+            is_string: true,
+            optional: true,
+            default_value: 'test',
+            verify_block: proc do |strategy|
+              possible_strategies = ['test', 'class', 'suite']
+              UI.user_error!("Error: :retry_strategy must equal to one of the following values: #{possible_strategies}") unless possible_strategies.include?(strategy)
+            end
           )
         ]
       end

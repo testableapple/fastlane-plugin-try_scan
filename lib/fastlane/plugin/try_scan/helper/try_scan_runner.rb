@@ -145,6 +145,18 @@ module TryScanManager
       end
     end
 
+    def retry_failed_test?
+      @options[:retry_strategy] == 'test'
+    end
+
+    def retry_failed_class?
+      @options[:retry_strategy] == 'class'
+    end
+
+    def retry_failed_suite?
+      @options[:retry_strategy] == 'suite'
+    end
+
     def parse_xcresult_report
       report_options = FastlaneScanHelper.report_options
       output_directory = report_options.instance_variable_get(:@output_directory)
@@ -167,9 +179,15 @@ module TryScanManager
           test_class = test_path.split('[')[1].split(' ').first
           test_name = test_path.split(' ')[1].split(']').first
         end
-        only_testing << "#{suite_name}/#{test_class}/#{test_name}"
+        only_testing << if retry_failed_test?
+          "#{suite_name}/#{test_class}/#{test_name}"
+        elsif retry_failed_class?
+          "#{suite_name}/#{test_class}"
+        elsif retry_failed_suite?
+          suite_name
+        end
       end
-      only_testing
+      only_testing.uniq
     end
 
     def tests_count_from_xcresult_report
