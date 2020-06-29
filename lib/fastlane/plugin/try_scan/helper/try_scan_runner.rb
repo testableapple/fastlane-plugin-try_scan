@@ -1,6 +1,5 @@
 module TryScanManager
   class Runner
-
     FastlaneScanHelper = TryScanManager::Helper::FastlaneScanHelper
 
     def initialize(options = {})
@@ -70,7 +69,7 @@ module TryScanManager
     def print_try_scan_result(failed_tests_count: 0)
       FastlaneCore::UI.important("TryScan: result after #{ordinalized_attempt} shot 👇")
       FastlaneCore::PrintTable.print_values(
-        config: {"Number of tests" => tests_count_from_xcresult_report, "Number of failures" => failed_tests_count},
+        config: { "Number of tests" => tests_count_from_xcresult_report, "Number of failures" => failed_tests_count },
         title: "Test Results"
       )
     end
@@ -123,7 +122,7 @@ module TryScanManager
       else
         xcargs << '-parallel-testing-enabled NO'
       end
-      @options[:xcargs] = "#{@options[:xcargs].to_s} #{xcargs.join(' ')}"
+      @options[:xcargs] = "#{@options[:xcargs]} #{xcargs.join(' ')}"
     end
 
     def update_scan_options(failed_tests)
@@ -141,7 +140,7 @@ module TryScanManager
         next if val.nil?
 
         Scan.config.set(key, val)
-        FastlaneCore::UI.verbose("\tSetting #{key.to_s} to #{val}")
+        FastlaneCore::UI.verbose("\tSetting #{key} to #{val}")
       end
     end
 
@@ -175,17 +174,18 @@ module TryScanManager
         begin
           test_class = test_path.split('.').first
           test_name = test_path.split('.')[1].split('(').first
-        rescue NoMethodError => _
+        rescue
           test_class = test_path.split('[')[1].split(' ').first
           test_name = test_path.split(' ')[1].split(']').first
         end
-        only_testing << if retry_failed_test?
-          "#{suite_name}/#{test_class}/#{test_name}"
-        elsif retry_failed_class?
-          "#{suite_name}/#{test_class}"
-        elsif retry_failed_suite?
-          suite_name
-        end
+        only_testing <<
+          if retry_failed_test?
+            "#{suite_name}/#{test_class}/#{test_name}"
+          elsif retry_failed_class?
+            "#{suite_name}/#{test_class}"
+          elsif retry_failed_suite?
+            suite_name
+          end
       end
       only_testing.uniq
     end

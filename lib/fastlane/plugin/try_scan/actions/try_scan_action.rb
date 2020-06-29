@@ -1,6 +1,5 @@
 module Fastlane
   module Actions
-
     require 'json'
     require 'fastlane/actions/scan'
     require_relative '../helper/scan_helper'

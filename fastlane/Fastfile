@@ -6,11 +6,6 @@ lane :test do
 
   try_scan(
     try_count: 10,
-    scheme: 'sample-appParallelTests'
-  )
-
-  try_scan(
-    try_count: 10,
     scheme: 'sample-appParallelUITests'
   )
 
@@ -20,5 +15,21 @@ lane :test do
     try_parallel: true,
     retry_parallel: false,
     parallel_workers: 2
+  )
+
+  try_scan(
+    try_count: 2,
+    scheme: 'sample-appParallelTests',
+    parallel_workers: 2,
+    retry_strategy: 'class',
+    fail_build: false
+  )
+
+  try_scan(
+    try_count: 2,
+    scheme: 'sample-appParallelTests',
+    parallel_workers: 2,
+    retry_strategy: 'suite',
+    fail_build: false
   )
 end
