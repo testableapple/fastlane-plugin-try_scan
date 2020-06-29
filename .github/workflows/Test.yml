@@ -1,0 +1,33 @@
+name: Test
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  chat:
+    name: Checks
+    timeout-minutes: 45
+    runs-on: [macos-latest]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Bundler
+        run: |
+          gem install bundler
+          bundle config path vendor/bundle
+          bundle check || bundle install --jobs 4 --retry 3
+      - name: Rubocop
+        run: bundle exec rubocop
+      - name: Fasterer
+        run: bundle exec fasterer lib/
+      - name: Fastlane
+        env:
+          PULL_REQUEST: ${{ github.event.pull_request._links.self.href }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          checkChanges=$(curl -s -H "authorization: Bearer $GITHUB_TOKEN" -X GET -G ${PULL_REQUEST}/files | jq -r '.[] | .filename' | grep -ci "plugin/try_scan/actions/\|plugin/try_scan/helper/" || true);
+          if [ $checkChanges = 0 ]; then
+            echo "Project related folders were not touched"
+          else
+            bundle exec fastlane test
+          fi

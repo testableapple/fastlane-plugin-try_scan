@@ -1,0 +1,10 @@
+daysUntilStale: 20
+
+daysUntilClose: 30
+
+staleLabel: wontfix
+
+markComment: >
+  This issue has been automatically marked as stale because it has not had recent activity (20 days). It will be closed if no further activity occurs. Thank you for your contributions.
+closeComment: >
+  This issue has been automatically closed because it has had no activity in 30 days. Thank you for your contributions.
