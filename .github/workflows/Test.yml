@@ -19,7 +19,7 @@ jobs:
       - name: Rubocop
         run: bundle exec rubocop
       - name: Fasterer
-        run: bundle exec fasterer lib/
+        run: bundle exec fasterer
       - name: Fastlane
         env:
           PULL_REQUEST: ${{ github.event.pull_request._links.self.href }}
