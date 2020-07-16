@@ -9,6 +9,9 @@ jobs:
     name: Checks
     timeout-minutes: 45
     runs-on: [macos-latest]
+    if: |
+      (github.event.pull_request.commits == 1 && !contains(github.event.pull_request.title, '[skip ci]')) ||
+      contains(github.event.pull_request.title, '[run ci]')
     steps:
       - uses: actions/checkout@v2
       - name: Bundler
@@ -24,9 +27,9 @@ jobs:
         env:
           PULL_REQUEST: ${{ github.event.pull_request._links.self.href }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TRIGGERS: "lib"
         run: |
-          checkChanges=$(curl -s -H "authorization: Bearer $GITHUB_TOKEN" -X GET -G ${PULL_REQUEST}/files | jq -r '.[] | .filename' | grep -ci "plugin/try_scan/actions/\|plugin/try_scan/helper/" || true);
-          if [ $checkChanges = 0 ]; then
+          if [ $(ruby ./.github/scripts/check_changes.rb) = 0 ]; then
             echo "Project related folders were not touched"
           else
             bundle exec fastlane test

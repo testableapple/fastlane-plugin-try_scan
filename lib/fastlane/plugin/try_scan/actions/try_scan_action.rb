@@ -67,6 +67,14 @@ module Fastlane
             optional: true
           ),
           FastlaneCore::ConfigItem.new(
+            key: :retry_build,
+            env_name: "FL_TRY_SCAN_RETRY_BUILD",
+            description: "Should building be retried after failure?",
+            is_string: false,
+            optional: true,
+            default_value: false
+          ),
+          FastlaneCore::ConfigItem.new(
             key: :retry_strategy,
             env_name: "FL_TRY_SCAN_RETRY_STRATEGY",
             description: "What would you like to retry after failure: test, class or suite?",
