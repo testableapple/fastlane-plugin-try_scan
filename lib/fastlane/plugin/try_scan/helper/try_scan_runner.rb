@@ -28,7 +28,7 @@ module TryScanManager
         update_scan_options(failed_tests)
         retry
       rescue FastlaneCore::Interface::FastlaneBuildFailure => _
-        return false if finish?
+        return false if finish? || !@options[:retry_build]
 
         @attempt += 1
         retry

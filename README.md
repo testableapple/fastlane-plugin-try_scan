@@ -14,6 +14,7 @@ Under the hood `try_scan` uses official [`fastlane scan action`](https://docs.fa
 | try_parallel | Should first run be executed in parallel? Equivalent to `-parallel-testing-enabled` | true |
 | retry_parallel | Should subsequent runs be executed in parallel? Required `try_parallel: true` | true |
 | parallel_workers | Specify the exact number of test runners that will be spawned during parallel testing. Equivalent to `-parallel-testing-worker-count` and `concurrent_workers` |  |
+| retry_build | Should building be retried after failure? | false |
 | retry_strategy | What would you like to retry after failure: test, class or suite? | test |
 
 ## Requirements
