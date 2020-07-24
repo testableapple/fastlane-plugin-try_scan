@@ -14,6 +14,12 @@ jobs:
       contains(github.event.pull_request.title, '[run ci]')
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: '0'
+      - name: Gitleaks
+        run: |
+          brew install gitleaks
+          gitleaks --redact --verbose --pretty --repo-path=.
       - name: Bundler
         run: |
           gem install bundler
