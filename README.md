@@ -34,7 +34,10 @@ $ fastlane add_plugin try_scan
 ```ruby
 try_scan(
   workspace: "Example.xcworkspace",
-  devices: ["iPhone 7", "iPad Air"],
-  try_count: 3
+  device: "iPhone 11 Pro Max",
+  try_count: 3,
+  parallel_workers: 2,
+  try_parallel: true,
+  retry_parallel: false
 )
 ```
