@@ -16,6 +16,13 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: '0'
+      - uses: actions/cache@v1
+        id: bundler-cache
+        with:
+          path: vendor/bundle
+          key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-gems-
       - name: Gitleaks
         run: |
           brew install gitleaks
@@ -29,6 +36,12 @@ jobs:
         run: bundle exec rubocop
       - name: Fasterer
         run: bundle exec fasterer
+      - name: Snyk
+        run: |
+          npm install -g snyk
+          snyk test
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       - name: Fastlane
         env:
           PULL_REQUEST: ${{ github.event.pull_request._links.self.href }}
