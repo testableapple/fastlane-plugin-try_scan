@@ -24,9 +24,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gems-
       - name: Gitleaks
+        env:
+          PULL_REQUEST: ${{ github.event.pull_request._links.self.href }}
+          GITLEAKS_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           brew install gitleaks
-          gitleaks --redact --verbose --pretty --repo-path=.
+          gitleaks --redact --verbose --pretty --host github --pr=$PULL_REQUEST
       - name: Bundler
         run: |
           gem install bundler
@@ -46,7 +49,7 @@ jobs:
         env:
           PULL_REQUEST: ${{ github.event.pull_request._links.self.href }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TRIGGERS: "lib"
+          TRIGGER: "lib/"
         run: |
           if [ $(ruby ./.github/scripts/check_changes.rb) = 0 ]; then
             echo "Project related folders were not touched"
