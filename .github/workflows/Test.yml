@@ -9,9 +9,7 @@ jobs:
     name: Checks
     timeout-minutes: 45
     runs-on: [macos-latest]
-    if: |
-      (github.event.pull_request.commits == 1 && !contains(github.event.pull_request.title, '[skip ci]')) ||
-      contains(github.event.pull_request.title, '[run ci]')
+    if: (!contains(github.event.pull_request.title, '[skip ci]'))
     steps:
       - uses: actions/checkout@v2
         with:
@@ -23,13 +21,6 @@ jobs:
           key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
           restore-keys: |
             ${{ runner.os }}-gems-
-      - name: Gitleaks
-        env:
-          PULL_REQUEST: ${{ github.event.pull_request._links.self.href }}
-          GITLEAKS_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          brew install gitleaks
-          gitleaks --redact --verbose --pretty --host github --pr=$PULL_REQUEST
       - name: Bundler
         run: |
           gem install bundler
