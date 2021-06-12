@@ -1,3 +1,9 @@
+## Important Announcement ⚠️
+
+**Xcode 13** provides test repetitions out of the box. For more details check out [WWDC21](https://developer.apple.com/videos/play/wwdc2021/10296).
+
+---
+
 # try_scan plugin
 
 [![fastlane Plugin Badge](https://rawcdn.githack.com/fastlane/fastlane/master/fastlane/assets/plugin-badge.svg)](https://rubygems.org/gems/fastlane-plugin-try_scan)
