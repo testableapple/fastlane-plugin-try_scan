@@ -19,6 +19,6 @@ test-results
 /Logs/
 /*.noindex/
 /TestResults/
-fastlane/test_output/
+fastlane/test_output*
 /info.plist
 *.xcuserdatad

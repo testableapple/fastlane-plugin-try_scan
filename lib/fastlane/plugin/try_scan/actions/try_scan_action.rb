@@ -85,6 +85,14 @@ module Fastlane
               possible_strategies = ['test', 'class', 'suite']
               UI.user_error!("Error: :retry_strategy must equal to one of the following values: #{possible_strategies}") unless possible_strategies.include?(strategy)
             end
+          ),
+          FastlaneCore::ConfigItem.new(
+            key: :backup,
+            env_name: "FL_TRY_SCAN_BACKUP",
+            description: "Back up an output of each execution to a separate folder",
+            is_string: false,
+            optional: true,
+            default_value: false
           )
         ]
       end

@@ -11,6 +11,7 @@ module TryScanManager
     def run
       configure_xcargs
       prepare_scan_config(@options)
+      FastlaneScanHelper.clean_up_backup
       print_summary
       @attempt = 1
       begin
@@ -22,6 +23,7 @@ module TryScanManager
       rescue FastlaneCore::Interface::FastlaneTestFailure => _
         failed_tests = failed_tests_from_xcresult_report
         print_try_scan_result(failed_tests_count: failed_tests.size)
+        backup_output_folder if @options[:backup]
         return false if finish?
 
         @attempt += 1
@@ -192,6 +194,10 @@ module TryScanManager
 
     def tests_count_from_xcresult_report
       parse_xcresult_report['metrics']['testsCount']['_value']
+    end
+
+    def backup_output_folder
+      FastlaneScanHelper.backup_output_folder(@attempt)
     end
   end
 end

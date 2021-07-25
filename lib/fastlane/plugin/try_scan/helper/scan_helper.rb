@@ -66,6 +66,27 @@ module TryScanManager
           end
         end
       end
+
+      def self.backup_output_folder(attempt)
+        output_files = report_options.instance_variable_get(:@output_files)
+        output_directory = report_options.instance_variable_get(:@output_directory)
+
+        unless output_files.empty?
+          FastlaneCore::UI.verbose("Back up an output folder")
+          backup = "#{output_directory}_#{attempt}"
+          FileUtils.mkdir_p(backup)
+          FileUtils.copy_entry(output_directory, backup)
+        end
+      end
+
+      def self.clean_up_backup
+        output_directory = report_options.instance_variable_get(:@output_directory)
+
+        Dir["#{output_directory}_*"].each do |backup|
+          FastlaneCore::UI.verbose("Removing backup: #{backup}")
+          FileUtils.rm_rf(backup)
+        end
+      end
     end
   end
 end

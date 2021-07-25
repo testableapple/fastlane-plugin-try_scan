@@ -22,6 +22,7 @@ Under the hood `try_scan` uses official [`fastlane scan action`](https://docs.fa
 | parallel_workers | Specify the exact number of test runners that will be spawned during parallel testing. Equivalent to `-parallel-testing-worker-count` and `concurrent_workers` |  |
 | retry_build | Should building be retried after failure? | false |
 | retry_strategy | What would you like to retry after failure: test, class or suite? | test |
+| backup | Back up an output of each execution to a separate folder | false |
 
 ## Requirements
 
