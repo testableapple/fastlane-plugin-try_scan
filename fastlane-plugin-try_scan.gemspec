@@ -26,9 +26,9 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency('pry')
   spec.add_development_dependency('bundler')
   spec.add_development_dependency('rake')
-  spec.add_development_dependency('fasterer', '0.8.3')
+  spec.add_development_dependency('fasterer', '0.9.0')
   spec.add_development_dependency('rubocop', '0.49.1')
   spec.add_development_dependency('rubocop-require_tools')
   spec.add_development_dependency('simplecov')
-  spec.add_development_dependency('fastlane', '>= 2.144.0')
+  spec.add_development_dependency('fastlane', '>= 2.188.0')
 end
