@@ -1,12 +1,14 @@
 lane :test do
   try_scan(
     try_count: 2,
-    scheme: 'sample-appSuccessfulTests'
+    scheme: 'sample-appSuccessfulTests',
+    backup: true
   )
 
   try_scan(
     try_count: 10,
-    scheme: 'sample-appParallelUITests'
+    scheme: 'sample-appParallelUITests',
+    backup: false
   )
 
   try_scan(
