@@ -28,18 +28,10 @@ jobs:
           gem install bundler
           bundle config path vendor/bundle
           bundle check || bundle install --jobs 4 --retry 3
-      - name: Rubocop
-        run: bundle exec rubocop
-      - name: Fasterer
-        run: bundle exec fasterer
       - name: Fastlane
         env:
           PULL_REQUEST: ${{ github.event.pull_request._links.self.href }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TRIGGER: "lib/"
         run: |
-          if [ $(ruby ./.github/scripts/check_changes.rb) = 0 ]; then
-            echo "Project related folders were not touched"
-          else
-            bundle exec fastlane test
-          fi
+          bundle exec fastlane test

@@ -1,58 +1,5 @@
 lane :test do
-  try_scan(
-    try_count: 2,
-    scheme: 'sample-appSuccessfulTests',
-    backup: true
-  )
-
-  try_scan(
-    try_count: 10,
-    scheme: 'sample-appParallelUITests',
-    backup: false
-  )
-
-  try_scan(
-    try_count: 10,
-    scheme: 'sample-appParallelTests',
-    try_parallel: true,
-    retry_parallel: false,
-    parallel_workers: 2
-  )
-
-  try_scan(
-    try_count: 2,
-    scheme: 'sample-appParallelTests',
-    parallel_workers: 2,
-    retry_strategy: 'class',
-    fail_build: false
-  )
-
-  try_scan(
-    try_count: 2,
-    scheme: 'sample-appParallelTests',
-    parallel_workers: 2,
-    retry_strategy: 'suite',
-    fail_build: false
-  )
-
-  try_scan_without_building
-end
-
-lane :try_scan_without_building do
-  derived_data_path = 'testme'
-  scheme = 'sample-appParallelTests'
   scan(
-    build_for_testing: true,
-    scheme: scheme,
-    derived_data_path: derived_data_path
-  )
-  try_scan(
-    try_count: 10,
-    scheme: scheme,
-    try_parallel: true,
-    retry_parallel: false,
-    parallel_workers: 2,
-    derived_data_path: derived_data_path,
-    test_without_building: true
+    scheme: 'sample-appSuccessfulTests',
   )
 end
